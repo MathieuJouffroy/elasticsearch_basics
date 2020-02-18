@@ -1,4 +1,4 @@
-P/OST twitter/_doc
+POST twitter/_doc
 {
  "user" : "mimich",
  "post_date" : "31 12 2015",

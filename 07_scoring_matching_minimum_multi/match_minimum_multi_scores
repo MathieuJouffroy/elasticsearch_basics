@@ -1,0 +1,98 @@
+# Check the "Primary Genre" of the top hits (at least top 5) is game.
+# Then check that the result is somehow relevant to what the user is searching :
+# "I'm looking for a game. I'm a big fan of starcraft and I like real time strategy.
+# Can you write a query to find me a game (and I will only accept game) ?"
+
+GET appstore_games_price/_mapping
+
+GET appstore_games_price/_search
+{
+  "_source": ["Name", "Genres",
+  "Average User Rating", "Price", "Description", "Primary Genre"],
+  "query": {
+    "bool": {
+      "must": [
+        {"match": {"Primary Genre": "Games"}},
+        {"match": { "Genres": "Strategy"}},
+        {"multi_match":
+        { "query": "Star",
+          "fields": ["Name", "Description"],
+          "boost": 1
+        }},
+        {"multi_match":
+        { "query": "time",
+          "fields": ["Name", "Description"]
+        }},
+        {"match_phrase": {
+          "Description":{
+           "query": "craft",
+           "analyzer": "english"
+          }
+        }
+        }
+      ]
+    }
+  }
+}
+
+# OR
+
+GET appstore_games_price/_search
+{
+  "_source": ["Name", "Genres",
+  "Average User Rating", "Price", "Description", "Primary Genre"],
+  "query": {
+    "bool": {
+      "must": [
+        {"match": {"Primary Genre": "Games"}},
+        {"match": { "Genres": "Strategy"}},
+        {"multi_match":
+        { "query": "Star",
+          "fields": ["Name", "Description"]
+        }},
+        {"multi_match":
+        { "query": "time",
+          "fields": ["Name", "Description"]
+        }}
+      ],
+      "should": [
+        {"match_phrase": {
+           "Description":{
+           "query": "craft",
+           "analyzer": "english"
+          }
+        }}
+      ]
+    }
+  }
+}
+
+# OR
+
+GET appstore_game/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "match": {
+            "Description": "starcraft"
+          }
+        },
+        {
+          "match": {
+            "Description": "real time"
+          }
+        }
+      ],
+      "minimum_should_match": 1,
+      "must": [
+        {
+          "match": {
+            "Primary Genre": "games"
+          }
+        }
+      ]
+    }
+  }
+}

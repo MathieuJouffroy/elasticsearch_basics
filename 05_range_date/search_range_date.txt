@@ -1,0 +1,113 @@
+GET appstore_games_tmp/_stats
+
+GET appstore_games_tmp/_mapping
+
+PUT appstore_game_pimp
+{
+  "mappings": 
+  {
+    "properties" : {
+      "Genres" : 
+      {
+        "type" : "keyword"
+      },
+      "Languages" : 
+      {
+        "type" : "keyword"
+      },
+      "Age Rating" : 
+      {
+        "enabled" : false
+      },
+      "Average User Rating" : 
+      {
+        "type" : "float"
+      },
+      "Current Version Release Date" : 
+      {
+        "type" : "date",
+        "format": ["d/MM/yyyy"]
+      },
+      "Description" : 
+      {
+        "type" : "text",
+        "analyzer": "english"
+      },
+      "Developer" : 
+      {
+		"type" : "text",
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          }
+        }
+      },
+      "ID" : 
+      {
+        "type" : "long"
+      },
+      "Icon URL" : 
+      {
+        "type" : "keyword"
+      },
+      "Name" : 
+      {
+        "type" : "text",
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
+          }
+        }
+      },
+      "Original Release Date" : 
+      {
+        "type" : "date",
+        "format": ["d/MM/yyyy"]
+      },
+      "Price" : 
+      {
+        "type" : "float"
+      },
+      "Primary Genre" : 
+      {
+        "type" : "keyword"
+      },
+      "Size" : {
+        "type" : "long"
+      },
+      "URL" : 
+      {
+        "type" : "keyword"
+      },
+      "User Rating Count" : 
+      {
+        "type" : "integer"
+      }
+    }
+  }
+} 
+
+POST  _reindex
+{
+  "source": {"index": "appstore_games_tmp"},
+  "dest": {"index": "appstore_games_pimp"}
+}
+
+GET appstore_games_pimp/_mapping
+
+GET appstore_games_pimp/_search
+{
+  "_source": ["Developer", "Original Release Date", "Current Version Release Date"],
+  "query": {
+    "bool": {
+      "must": [
+        {"range": { "Original Release Date": 
+        {"lt": "01/08/2008"} }},
+        {"range": {"Current Version Release Date": 
+        {"gte": "01/01/2018"}}}
+      ]
+    }
+  }
+}

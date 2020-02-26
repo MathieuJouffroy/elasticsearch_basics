@@ -1,0 +1,34 @@
+# There are two games who speak of a Vibrant World and have a link to facebook.com
+# (or fb.com) in their description. Find them !
+
+# Hint: the distance between the word "vibrant" and "world" longer than a few words...
+# BONUS: there are actually three games, special Kudos if you find the 3rd one!
+
+GET appstore_game/_search?filter_path=hits
+{
+  "_source": "Name",
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match_phrase": {
+            "Description": {
+              "query": "vibrant world",
+              "slop": 5
+            }
+          }
+        },
+        {
+          "match": {
+            "Description": "facebook.com fb.com"
+          }
+        }
+      ],
+      "filter": {
+        "match": {
+          "Primary Genre": "Games"
+        }
+      }
+    }
+  }
+}

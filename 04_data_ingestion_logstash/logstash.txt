@@ -1,0 +1,88 @@
+# create the 'ingest-pipeline.conf' in the config/ in the logstash directory
+# add path to appstore_game.csv (kaggle)
+
+# Sample Logstash configuration for creating a simple
+
+#The file is splitted in three parts :
+# input {} --> definition of the inputs
+# filter {} --> operation to perform on the inputs
+# output {} --> definition of the outputs
+
+# file {} --> our input will be a file, could be something else (stdin, data stream, ...etc)
+# path --> location of the input file
+# start_position --> where to start reading the file
+# sincedb_path --> logstash store its position in the input file, so if new lines are added,
+# only new line will be processed. (ie, if you want to re run the ingest, delete the sincedb_file)
+
+input
+{
+	file
+	{
+		path => "/Users/MathieuJouffroy/DataScience/elasticsearc_basics/appstore_games.csv"
+		start_position => "beginning"
+		sincedb_path => "my-sincedb"
+	}
+}
+filter
+{
+	csv
+	{
+		separator => ","
+		columns => ["URL","ID","Name","Subtitle","Icon URL","Average User Rating","User Rating Count","Price","In-app Purchases","Description","Developer","Age Rating","Languages","Size","Primary Genre","Genres","Original Release Date","Current Version Release Date"]
+		remove_field => ["message", "host", "path", "@timestamp"]
+		skip_header => true
+	}
+	mutate
+	{
+		gsub => [ "Description", "\\n", ""]
+		gsub => [ "Description", "\\u2022", "•"]
+		gsub => [ "Description", "\\u2013", "–"]
+		gsub => [ "Description", "\\t", "	"]
+		split => { "Genres" => "," }
+		split => { "Languages" => "," }
+	}
+}
+
+# csv{}     --> we use the csv pluging to parse the file
+#
+# separator --> split each line on the comma
+#
+# column    --> name of the columns (will create one field in the index mapping per column)
+#
+# remove_field --> here we remove 4 fields, those 4 fields are added by
+# logstash to the raw data but we don't need them.
+#
+# skip_header --> skip the first line
+#
+# mutate{}    --> When logstash parse the field it escape any '' it found.
+# This changes a '\n', '\t', '\u2022' and '\u2013' into a '\n', '\t', '\u2022', '\u2013' respectively,
+# which is not what we want. The mutate pluging is used here to fix this.
+#
+# gsub  --> subtitute '\n' by a new line and the '\u20xx' by its unicode character.
+#
+# split --> split the "Genres" and "Languages" field on the ","
+# instead of a single string like "FR, EN, KR" we will have ["EN", "FR", "KR]
+
+output
+{
+	elasticsearch
+	{
+		hosts => "http://localhost:9200"
+		index => "appstore_games_tmp"
+	}
+	stdout
+	{
+		codec => "dots"
+	}
+}
+
+# elasticsearch {} --> we want to output to an Elasticsearch cluster
+# hosts            --> ip of the cluster
+# index            --> name of the index where to put the data (index will be created if not existing,
+#                      otherwise data are added to the cluster)
+# stdout {}        --> we also want an output on stdout to follow the ingestion process
+# codec => "dots"  --> print one dot '.' for every document ingested
+
+# run ./bin/logstash -f config/ingest-pipeline.conf
+
+# Run `GET _cat/indices` in Kibana and chak there 17007 documents in the appstore_game index

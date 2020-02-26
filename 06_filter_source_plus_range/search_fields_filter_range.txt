@@ -1,0 +1,40 @@
+GET appstore_games_pimp/_mapping
+GET appstore_games_pimp/_stats
+
+GET appstore_games_pimp/_search
+{
+  "_source": ["Name", "Languages", "Price"],
+  "query": {
+    "bool": {
+      "must": [
+        {"range": { "Price": 
+        {"gte": 5, "lte": 10}}}
+      ]
+    }
+  }
+}
+
+# OR 
+
+GET appstore_game_pimp/_search
+{
+  "_source": ["Name", "Languages", "Price"],
+  "size": 10000,
+  "query":
+  {
+    "bool":
+    {
+      "filter":
+      {
+        "range": {
+          "Price": {
+            "gte": 5,
+            "lte": 10
+          }
+        }
+      }
+    }
+  }
+}
+
+# You should get 192 hits.
